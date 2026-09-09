@@ -1,0 +1,6 @@
+pandas
+sqlalchemy
+oracledb
+python-dotenv
+google-genai
+openpyxl
