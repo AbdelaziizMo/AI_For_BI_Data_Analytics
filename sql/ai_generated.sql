@@ -1,124 +1,150 @@
-WITH CLEANSED_TRANSACTIONS AS (
-    SELECT 
+WITH DQ_DEDUPLICATED_TRANSACTIONS AS (
+    /* -------------------------------------------------------------------------
+       CTE 1: DQ_DEDUPLICATED_TRANSACTIONS
+       Purpose: Apply core Data Quality (DQ) validation rules and assign row numbers 
+                partitioned by TransactionID to identify duplicate records.
+       ------------------------------------------------------------------------- */
+    SELECT
         t.TransactionID,
         t.AccountIDFrom,
         t.AccountIDTo,
         t.TotalAmount,
-        t.TransactionType, -- Confirmed as Service ID
+        t.TransactionType AS ServiceID, -- TransactionType is explicitly confirmed as Service ID
         t.IsReversed,
-        t.Date,
-        t.ID,
-        -- Assign row numbers to identify duplicate TransactionIDs deterministically
+        t.Date AS TransactionTimestamp,
+        TRUNC(t.Date) AS TransactionDate,
         ROW_NUMBER() OVER (
-            PARTITION BY t.TransactionID 
+            PARTITION BY t.TransactionID
             ORDER BY t.Date DESC, t.ID DESC
-        ) AS rn
+        ) AS RowNum
     FROM PLAYGROUND.TRANSACTIONS t
-    WHERE 
-        -- Week 6 DQ Rule 2: Exclude NULLs in critical columns
-        t.TransactionID IS NOT NULL
-        AND t.AccountIDFrom IS NOT NULL
-        AND t.AccountIDTo IS NOT NULL
-        AND t.TotalAmount IS NOT NULL
-        AND t.TransactionType IS NOT NULL
-        AND t.IsReversed IS NOT NULL
-        AND t.Date IS NOT NULL
-        -- Week 6 DQ Rule 3: Valid positive transaction amounts
-        AND t.TotalAmount > 0
-        -- Week 6 DQ Rule 5: Valid transaction status values
-        AND t.IsReversed IN (0, 1)
-        -- Week 6 DQ Rule 6: Exclude future transaction dates
-        AND t.Date <= SYSTIMESTAMP
+    WHERE t.TransactionID IS NOT NULL
+      AND t.AccountIDFrom IS NOT NULL
+      AND t.AccountIDTo IS NOT NULL
+      AND t.TotalAmount IS NOT NULL
+      AND t.TransactionType IS NOT NULL
+      AND t.IsReversed IS NOT NULL
+      AND t.Date IS NOT NULL
+      AND t.TotalAmount > 0                   -- Exclude non-positive amounts
+      AND t.IsReversed IN (0, 1)             -- Enforce binary status validity
+      AND t.Date <= SYSTIMESTAMP              -- Exclude future-dated transactions
 ),
-
-DEDUPLICATED_ACTIVE_TRANSACTIONS AS (
-    SELECT 
-        ct.TransactionID,
-        ct.TotalAmount,
-        ct.TransactionType AS SERVICE_ID,
-        TRUNC(ct.Date) AS TRANSACTION_DATE
-    FROM CLEANSED_TRANSACTIONS ct
-    WHERE 
-        -- Week 6 DQ Rule 1: Deduplication filter
-        ct.rn = 1
-        -- Business Logic Rule: Exclude reversed transactions from financial performance
-        AND ct.IsReversed = 0
+CLEAN_BUSINESS_TRANSACTIONS AS (
+    /* -------------------------------------------------------------------------
+       CTE 2: CLEAN_BUSINESS_TRANSACTIONS
+       Purpose: Filter out duplicate records, exclude reversed transactions, and 
+                validate Service IDs via explicit INNER JOIN with SERVICES table.
+       ------------------------------------------------------------------------- */
+    SELECT
+        d.TransactionID,
+        d.ServiceID,
+        s.NameAr AS ServiceName,
+        d.TransactionDate,
+        d.TotalAmount
+    FROM DQ_DEDUPLICATED_TRANSACTIONS d
+    INNER JOIN PLAYGROUND.SERVICES s
+        ON d.ServiceID = s.ID
+    WHERE d.RowNum = 1                         -- Retain only the latest unique record
+      AND d.IsReversed = 0                     -- Include valid non-reversed business activity
 ),
-
-DAILY_SERVICE_AGGREGATES AS (
-    SELECT 
-        dat.TRANSACTION_DATE,
-        dat.SERVICE_ID,
-        s.NameAr AS SERVICE_NAME,
-        COUNT(dat.TransactionID) AS DAILY_VOLUME,
-        SUM(dat.TotalAmount) AS DAILY_REVENUE,
-        ROUND(AVG(dat.TotalAmount), 3) AS AVG_TRANSACTION_AMOUNT
-    FROM DEDUPLICATED_ACTIVE_TRANSACTIONS dat
-    -- Week 6 DQ Rule 4 & Join Requirement: Join with SERVICES on TransactionType = ID
-    INNER JOIN PLAYGROUND.SERVICES s 
-        ON dat.SERVICE_ID = s.ID
-    GROUP BY 
-        dat.TRANSACTION_DATE,
-        dat.SERVICE_ID,
-        s.NameAr
+DAILY_SERVICE_SUMMARY AS (
+    /* -------------------------------------------------------------------------
+       CTE 3: DAILY_SERVICE_SUMMARY
+       Purpose: Aggregate daily performance metrics per service.
+       ------------------------------------------------------------------------- */
+    SELECT
+        ServiceID,
+        ServiceName,
+        TransactionDate,
+        COUNT(TransactionID) AS DailyTransactionVolume,
+        SUM(TotalAmount) AS DailyRevenue,
+        ROUND(AVG(TotalAmount), 3) AS AvgTransactionAmount
+    FROM CLEAN_BUSINESS_TRANSACTIONS
+    GROUP BY
+        ServiceID,
+        ServiceName,
+        TransactionDate
 ),
-
-SERVICE_OVERALL_METRICS AS (
-    SELECT 
-        dsa.SERVICE_ID,
-        SUM(dsa.DAILY_VOLUME) AS OVERALL_VOLUME,
-        SUM(dsa.DAILY_REVENUE) AS OVERALL_REVENUE,
-        -- Calculate ranks across the 12-day dataset
-        DENSE_RANK() OVER (ORDER BY SUM(dsa.DAILY_REVENUE) DESC) AS REVENUE_RANK,
-        DENSE_RANK() OVER (ORDER BY SUM(dsa.DAILY_VOLUME) DESC) AS VOLUME_RANK
-    FROM DAILY_SERVICE_AGGREGATES dsa
-    GROUP BY dsa.SERVICE_ID
+SERVICE_OVERALL_TOTALS AS (
+    /* -------------------------------------------------------------------------
+       CTE 4: SERVICE_OVERALL_TOTALS
+       Purpose: Calculate 12-day period totals per service using window aggregates.
+       ------------------------------------------------------------------------- */
+    SELECT
+        d.ServiceID,
+        d.ServiceName,
+        d.TransactionDate,
+        d.DailyTransactionVolume,
+        d.DailyRevenue,
+        d.AvgTransactionAmount,
+        SUM(d.DailyRevenue) OVER (PARTITION BY d.ServiceID) AS Total12DayRevenue,
+        SUM(d.DailyTransactionVolume) OVER (PARTITION BY d.ServiceID) AS Total12DayVolume
+    FROM DAILY_SERVICE_SUMMARY d
+),
+SERVICE_RANKINGS AS (
+    /* -------------------------------------------------------------------------
+       CTE 5: SERVICE_RANKINGS
+       Purpose: Rank services globally based on 12-day revenue and volume.
+       ------------------------------------------------------------------------- */
+    SELECT
+        s.*,
+        DENSE_RANK() OVER (ORDER BY s.Total12DayRevenue DESC) AS RevenueRank,
+        DENSE_RANK() OVER (ORDER BY s.Total12DayVolume DESC) AS VolumeRank
+    FROM SERVICE_OVERALL_TOTALS s
+),
+LAG_PERFORMANCE AS (
+    /* -------------------------------------------------------------------------
+       CTE 6: LAG_PERFORMANCE
+       Purpose: Retrieve previous day's metrics using LAG() for trend calculations.
+       ------------------------------------------------------------------------- */
+    SELECT
+        r.ServiceID,
+        r.ServiceName,
+        r.TransactionDate,
+        r.DailyTransactionVolume,
+        r.DailyRevenue,
+        r.AvgTransactionAmount,
+        r.Total12DayRevenue,
+        r.Total12DayVolume,
+        r.RevenueRank,
+        r.VolumeRank,
+        LAG(r.DailyRevenue, 1) OVER (
+            PARTITION BY r.ServiceID 
+            ORDER BY r.TransactionDate ASC
+        ) AS PrevDayRevenue,
+        LAG(r.DailyTransactionVolume, 1) OVER (
+            PARTITION BY r.ServiceID 
+            ORDER BY r.TransactionDate ASC
+        ) AS PrevDayVolume
+    FROM SERVICE_RANKINGS r
 )
-
-SELECT 
-    dsa.TRANSACTION_DATE,
-    dsa.SERVICE_ID,
-    dsa.SERVICE_NAME,
-    
-    -- Daily Performance
-    dsa.DAILY_VOLUME,
-    dsa.DAILY_REVENUE,
-    dsa.AVG_TRANSACTION_AMOUNT,
-    
-    -- Period Ranks & Totals
-    som.OVERALL_REVENUE,
-    som.OVERALL_VOLUME,
-    som.REVENUE_RANK,
-    som.VOLUME_RANK,
-    
-    -- Day-over-Day Trends
-    LAG(dsa.DAILY_REVENUE) OVER (
-        PARTITION BY dsa.SERVICE_ID 
-        ORDER BY dsa.TRANSACTION_DATE
-    ) AS PREVIOUS_DAY_REVENUE,
-    
-    LAG(dsa.DAILY_VOLUME) OVER (
-        PARTITION BY dsa.SERVICE_ID 
-        ORDER BY dsa.TRANSACTION_DATE
-    ) AS PREVIOUS_DAY_VOLUME,
-    
-    -- Day-over-Day Growth % (avoiding division by zero)
-    ROUND(
-        (dsa.DAILY_REVENUE - LAG(dsa.DAILY_REVENUE) OVER (PARTITION BY dsa.SERVICE_ID ORDER BY dsa.TRANSACTION_DATE)) 
-        / NULLIF(LAG(dsa.DAILY_REVENUE) OVER (PARTITION BY dsa.SERVICE_ID ORDER BY dsa.TRANSACTION_DATE), 0) * 100, 
-        2
-    ) AS REVENUE_GROWTH_PCT,
-    
-    ROUND(
-        (dsa.DAILY_VOLUME - LAG(dsa.DAILY_VOLUME) OVER (PARTITION BY dsa.SERVICE_ID ORDER BY dsa.TRANSACTION_DATE)) 
-        / NULLIF(LAG(dsa.DAILY_VOLUME) OVER (PARTITION BY dsa.SERVICE_ID ORDER BY dsa.TRANSACTION_DATE), 0) * 100, 
-        2
-    ) AS VOLUME_GROWTH_PCT
-
-FROM DAILY_SERVICE_AGGREGATES dsa
-JOIN SERVICE_OVERALL_METRICS som 
-    ON dsa.SERVICE_ID = som.SERVICE_ID
-ORDER BY 
-    som.REVENUE_RANK ASC,
-    dsa.SERVICE_ID ASC,
-    dsa.TRANSACTION_DATE ASC;
+/* -----------------------------------------------------------------------------
+   FINAL SELECT:
+   Calculate Day-over-Day (DoD) growth percentages with zero-division safety.
+   ----------------------------------------------------------------------------- */
+SELECT
+    ServiceID,
+    ServiceName,
+    TransactionDate,
+    DailyTransactionVolume,
+    DailyRevenue,
+    AvgTransactionAmount,
+    Total12DayRevenue,
+    Total12DayVolume,
+    RevenueRank,
+    VolumeRank,
+    NVL(PrevDayRevenue, 0) AS PrevDayRevenue,
+    NVL(PrevDayVolume, 0) AS PrevDayVolume,
+    CASE
+        WHEN PrevDayRevenue IS NULL OR PrevDayRevenue = 0 THEN NULL
+        ELSE ROUND(((DailyRevenue - PrevDayRevenue) / PrevDayRevenue) * 100, 2)
+    END AS RevenueGrowthPct,
+    CASE
+        WHEN PrevDayVolume IS NULL OR PrevDayVolume = 0 THEN NULL
+        ELSE ROUND(((DailyTransactionVolume - PrevDayVolume) / PrevDayVolume) * 100, 2)
+    END AS VolumeGrowthPct
+FROM LAG_PERFORMANCE
+ORDER BY
+    RevenueRank ASC,
+    ServiceID ASC,
+    TransactionDate ASC;

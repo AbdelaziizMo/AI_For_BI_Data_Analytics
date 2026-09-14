@@ -1,8 +1,12 @@
 from pathlib import Path
 
+from datetime import datetime
+
 import pandas as pd
+from sqlalchemy import text
 
 from config.database import get_engine
+from src.config import START_DATE, END_DATE
 
 
 # ================================================================
@@ -40,20 +44,43 @@ def load_sql_query():
 
 
 def load_data():
-    """
-    Execute improved.sql in Oracle and return the result
-    as a pandas DataFrame.
-    """
-
     sql_query = load_sql_query()
 
     engine = get_engine()
 
     try:
+        print("=" * 70)
+        print("LOADING DATA FROM ORACLE")
+        print("=" * 70)
+        print(f"SQL File    : {SQL_FILE}")
+        print(f"START_DATE  : {START_DATE}")
+        print(f"END_DATE    : {END_DATE}")
+        print()
+
+        start_date = datetime.strptime(START_DATE, "%Y-%m-%d %H:%M:%S")
+        end_date = datetime.strptime(END_DATE, "%Y-%m-%d %H:%M:%S")
+
+        sql = text(sql_query)
+
         df = pd.read_sql(
-            sql_query,
+            sql,
             con=engine,
+            params={
+                "start_date": start_date,
+                "end_date": end_date,
+            },
         )
+
+        # Normalize column names for Python analysis
+        df.columns = [col.lower() for col in df.columns]
+
+        print("\nColumns returned from SQL:")
+        for col in df.columns:
+            print(f"  - {col}")
+
+        print(f"Rows loaded    : {len(df):,}")
+        print(f"Columns loaded : {len(df.columns)}")
+        print()
 
         return df
 

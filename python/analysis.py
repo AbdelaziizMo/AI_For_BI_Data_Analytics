@@ -34,17 +34,16 @@ REQUIRED_COLUMNS = [
     "transaction_date",
     "daily_transaction_volume",
     "daily_revenue",
-    "avg_transaction_amount",
-    "total_transaction_volume",
+    "average_transaction_amount",
     "total_revenue",
+    "total_transaction_volume",
     "revenue_rank",
     "volume_rank",
     "previous_day_revenue",
-    "previous_day_volume",
-    "revenue_growth_percent",
-    "volume_growth_percent",
+    "previous_day_transaction_volume",
+    "revenue_growth_pct",
+    "volume_growth_pct",
 ]
-
 
 def validate_dataframe(df: pd.DataFrame) -> None:
     """
@@ -244,7 +243,7 @@ def calculate_daily_revenue_trend(
         daily_revenue["daily_revenue"].diff()
     )
 
-    daily_revenue["revenue_growth_percent"] = (
+    daily_revenue["revenue_growth_pct"] = (
         daily_revenue["daily_revenue"]
         .pct_change()
         .mul(100)
@@ -278,7 +277,7 @@ def calculate_daily_volume_trend(
         daily_volume["daily_transaction_volume"].diff()
     )
 
-    daily_volume["volume_growth_percent"] = (
+    daily_volume["volume_growth_pct"] = (
         daily_volume["daily_transaction_volume"]
         .pct_change()
         .mul(100)
@@ -342,12 +341,12 @@ def calculate_revenue_growth_analysis(
                 "transaction_date",
                 "daily_revenue",
                 "previous_day_revenue",
-                "revenue_growth_percent",
+                "revenue_growth_pct",
             ]
         ]
         .dropna(
             subset=[
-                "revenue_growth_percent",
+                "revenue_growth_pct",
             ]
         )
         .copy()
@@ -356,7 +355,7 @@ def calculate_revenue_growth_analysis(
     raw_growth = (
         growth_df
         .sort_values(
-            "revenue_growth_percent",
+            "revenue_growth_pct",
             ascending=False,
         )
         .head(TOP_N)
@@ -371,7 +370,7 @@ def calculate_revenue_growth_analysis(
     filtered_growth = (
         filtered_growth
         .sort_values(
-            "revenue_growth_percent",
+            "revenue_growth_pct",
             ascending=False,
         )
         .head(TOP_N)
@@ -400,12 +399,12 @@ def calculate_revenue_decline_analysis(
                 "transaction_date",
                 "daily_revenue",
                 "previous_day_revenue",
-                "revenue_growth_percent",
+                "revenue_growth_pct",
             ]
         ]
         .dropna(
             subset=[
-                "revenue_growth_percent",
+                "revenue_growth_pct",
             ]
         )
         .copy()
@@ -414,7 +413,7 @@ def calculate_revenue_decline_analysis(
     raw_decline = (
         growth_df
         .sort_values(
-            "revenue_growth_percent",
+            "revenue_growth_pct",
             ascending=True,
         )
         .head(TOP_N)
@@ -429,7 +428,7 @@ def calculate_revenue_decline_analysis(
     filtered_decline = (
         filtered_decline
         .sort_values(
-            "revenue_growth_percent",
+            "revenue_growth_pct",
             ascending=True,
         )
         .head(TOP_N)
@@ -457,13 +456,13 @@ def calculate_volume_growth_analysis(
                 "service_name",
                 "transaction_date",
                 "daily_transaction_volume",
-                "previous_day_volume",
-                "volume_growth_percent",
+                "previous_day_transaction_volume",
+                "volume_growth_pct",
             ]
         ]
         .dropna(
             subset=[
-                "volume_growth_percent",
+                "volume_growth_pct",
             ]
         )
         .copy()
@@ -472,7 +471,7 @@ def calculate_volume_growth_analysis(
     raw_growth = (
         growth_df
         .sort_values(
-            "volume_growth_percent",
+            "volume_growth_pct",
             ascending=False,
         )
         .head(TOP_N)
@@ -480,14 +479,14 @@ def calculate_volume_growth_analysis(
     )
 
     filtered_growth = growth_df[
-        growth_df["previous_day_volume"]
+        growth_df["previous_day_transaction_volume"]
         >= MIN_PREVIOUS_VOLUME
     ].copy()
 
     filtered_growth = (
         filtered_growth
         .sort_values(
-            "volume_growth_percent",
+            "volume_growth_pct",
             ascending=False,
         )
         .head(TOP_N)
@@ -515,13 +514,13 @@ def calculate_volume_decline_analysis(
                 "service_name",
                 "transaction_date",
                 "daily_transaction_volume",
-                "previous_day_volume",
-                "volume_growth_percent",
+                "previous_day_transaction_volume",
+                "volume_growth_pct",
             ]
         ]
         .dropna(
             subset=[
-                "volume_growth_percent",
+                "volume_growth_pct",
             ]
         )
         .copy()
@@ -530,7 +529,7 @@ def calculate_volume_decline_analysis(
     raw_decline = (
         growth_df
         .sort_values(
-            "volume_growth_percent",
+            "volume_growth_pct",
             ascending=True,
         )
         .head(TOP_N)
@@ -538,14 +537,14 @@ def calculate_volume_decline_analysis(
     )
 
     filtered_decline = growth_df[
-        growth_df["previous_day_volume"]
+        growth_df["previous_day_transaction_volume"]
         >= MIN_PREVIOUS_VOLUME
     ].copy()
 
     filtered_decline = (
         filtered_decline
         .sort_values(
-            "volume_growth_percent",
+            "volume_growth_pct",
             ascending=True,
         )
         .head(TOP_N)
@@ -646,9 +645,9 @@ def calculate_data_quality(df: pd.DataFrame) -> dict:
 
     growth_columns = [
         "previous_day_revenue",
-        "previous_day_volume",
-        "revenue_growth_percent",
-        "volume_growth_percent",
+        "previous_day_transaction_volume",
+        "revenue_growth_pct",
+        "volume_growth_pct",
     ]
 
     other_columns = [
