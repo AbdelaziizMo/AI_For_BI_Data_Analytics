@@ -1,124 +1,474 @@
-# Week 10 - AI for BI & Data Analytics
+# AI for BI & Data Analytics
 
-## Project Overview
+An end-to-end AI-assisted Business Intelligence and Data Analytics pipeline that combines **Gemini, Oracle, Python, SQL validation, privacy controls, and automated business analysis**.
 
-This project demonstrates an end-to-end **AI-powered Business Intelligence and Data Analytics pipeline**.
-
-The project combines:
-
-* Oracle Database
-* SQL data validation and transformation
-* Python data analysis
-* Pandas
-* SQLAlchemy
-* Google Gemini AI
-* Prompt Engineering
-* Automated Business Intelligence reporting
-
-The objective is to answer a business question using a combination of **SQL analytics, Python-based analysis, and Generative AI**.
+The project demonstrates how Generative AI can assist BI and Data Engineering workflows while keeping raw transaction-level data inside the controlled execution environment.
 
 ---
 
-## Business Question
+## 1. Project Overview
+
+This project was developed as part of the **Week 10 – AI for BI & Data Analytics** training task.
+
+The objective is to demonstrate how AI can support a BI/Data professional across multiple stages of an analytical workflow:
+
+* Business question interpretation
+* Analysis planning
+* SQL generation
+* SQL security validation
+* Database execution
+* KPI and analytical result generation
+* Privacy protection
+* AI-assisted business interpretation
+* Automated business reporting
+
+A key design principle of this project is:
+
+> **Raw transaction-level data is not sent to the AI analyst.**
+
+Gemini generates analytical logic and SQL, while Python validates and executes the approved SQL against Oracle. Only aggregated analytical results are passed through the Privacy Guard to the AI Business Analyst.
+
+---
+
+# 2. Business Question
 
 > **Which services generate the highest revenue and transaction volume, and how does their performance change over time?**
 
-The analysis evaluates service-level revenue, transaction volume, daily trends, growth rates, concentration, and data-quality observations.
+The analysis focuses on:
+
+* Revenue
+* Transaction volume
+* Revenue share
+* Volume share
+* Revenue ranking
+* Volume ranking
+* Daily revenue
+* Daily transaction volume
+* Average transaction amount
+* Revenue growth
+* Volume growth
+
+The analysis identifies the **Top 10 services by overall revenue**.
 
 ---
 
-## Project Architecture
+# 3. Solution Architecture
 
 ```text
-                    ┌─────────────────────┐
-                    │    Oracle Database  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │    improved.sql     │
-                    │                     │
-                    │ Data Validation     │
-                    │ Deduplication       │
-                    │ Service Join        │
-                    │ Revenue Metrics     │
-                    │ Volume Metrics      │
-                    │ Daily Trends        │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   data_loader.py    │
-                    │                     │
-                    │ SQL → Pandas        │
-                    │ DataFrame           │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │     analysis.py     │
-                    │                     │
-                    │ Business Metrics    │
-                    │ Top Services        │
-                    │ Trends              │
-                    │ Growth              │
-                    │ Concentration       │
-                    │ Data Quality        │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   ai_analysis.py    │
-                    │                     │
-                    │ Prepare AI Input    │
-                    │ Prompt Engineering  │
-                    │ Gemini Analysis     │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │    Gemini AI        │
-                    │                     │
-                    │ BI Interpretation   │
-                    │ Insights            │
-                    │ Risks               │
-                    │ Recommendations     │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-              ┌────────────────────────────────┐
-              │ output/ai_business_report.md   │
-              └────────────────────────────────┘
+Business Question
+        │
+        ▼
+┌───────────────────────┐
+│   Gemini AI Planner   │
+└───────────┬───────────┘
+            │
+            ▼
+      Analysis Plan
+            │
+            ▼
+┌────────────────────────────┐
+│ Gemini SQL Generator       │
+│                            │
+│ Generates analytical SQL   │
+└────────────┬───────────────┘
+             │
+             ▼
+       Generated SQL
+             │
+             ▼
+┌────────────────────────────┐
+│ Python SQL Validator       │
+│                            │
+│ Security & analytical     │
+│ validation                 │
+└────────────┬───────────────┘
+             │
+             ▼
+       Validated SQL
+             │
+             ▼
+┌────────────────────────────┐
+│ Python Execution Layer     │
+└────────────┬───────────────┘
+             │
+             ▼
+          Oracle
+             │
+             ▼
+┌────────────────────────────┐
+│ Aggregated Analytical Data │
+└────────────┬───────────────┘
+             │
+             ▼
+┌────────────────────────────┐
+│ Privacy Guard              │
+│                            │
+│ Removes blocked/raw fields │
+└────────────┬───────────────┘
+             │
+             ▼
+     Sanitized Analysis
+             │
+             ▼
+┌────────────────────────────┐
+│ Gemini AI Business Analyst │
+└────────────┬───────────────┘
+             │
+             ▼
+      Business Report
 ```
 
 ---
 
-# Project Structure
+# 4. AI Workflow
+
+## Step 1 – Business Question
+
+The business question is defined as:
+
+> Which services generate the highest revenue and transaction volume, and how does their performance change over time?
+
+---
+
+## Step 2 – Gemini Planner
+
+Gemini converts the business question into a structured analysis plan.
+
+The generated plan identifies:
+
+* Analysis type: `SERVICE_TREND`
+* Dimensions:
+
+  * Service
+  * Date
+* KPIs:
+
+  * Total Revenue
+  * Transaction Volume
+  * Revenue Share
+  * Volume Share
+  * Revenue Growth
+  * Volume Growth
+  * Revenue Rank
+  * Volume Rank
+* Top N: `10`
+
+Output:
 
 ```text
-Week10_AI_for_BI_Data_Analytics/
-│
-├── config/
-│   ├── __init__.py
-│   └── database.py
+output/analysis_plan.json
+```
+
+---
+
+# 5. AI SQL Generation
+
+Gemini generates analytical SQL based on the approved database schema and analysis plan.
+
+The SQL generator is constrained to:
+
+* Approved Oracle tables
+* Confirmed table relationships
+* Approved analytical logic
+* Parameterized date filtering
+* Aggregated analytical output
+* No raw transaction-level identifiers in the final output
+
+The generated SQL uses techniques including:
+
+* CTEs
+* `ROW_NUMBER()`
+* Window functions
+* `LAG()`
+* Ranking
+* Aggregation
+* Revenue and volume shares
+* Daily trend analysis
+
+Generated SQL:
+
+```text
+output/generated_sql.json
+```
+
+---
+
+# 6. SQL Validation & Security
+
+Generated SQL is **never executed directly**.
+
+Before execution, the Python SQL Validator checks the generated queries.
+
+Validation includes:
+
+1. Statement count
+2. Read-only restrictions
+3. `SELECT` / `WITH` requirement
+4. Wildcard usage
+5. Approved database tables
+6. Bind parameters
+7. Date filtering
+8. Approved service relationship
+9. Analytical output and privacy rules
+
+The validator blocks dangerous operations such as:
+
+```text
+INSERT
+UPDATE
+DELETE
+MERGE
+DROP
+ALTER
+TRUNCATE
+CREATE
+GRANT
+REVOKE
+```
+
+The generated query must be analytical and read-only.
+
+Validated SQL:
+
+```text
+output/validated_sql.json
+```
+
+---
+
+# 7. Oracle Execution
+
+The validated SQL is executed through Python against the Oracle training database.
+
+The execution layer:
+
+* Loads validated SQL
+* Uses date bind parameters
+* Connects to Oracle
+* Executes the validated query
+* Retrieves aggregated analytical results
+* Saves the results as JSON
+
+Output:
+
+```text
+output/aggregated_results.json
+```
+
+The final analytical result contains aggregated service-level and daily metrics rather than raw transaction records.
+
+---
+
+# 8. Privacy Guard
+
+The Privacy Guard is an important part of the architecture.
+
+Its purpose is to ensure that only approved analytical fields are passed to the AI Business Analyst.
+
+### Allowed analytical fields
+
+Examples include:
+
+```text
+service_id
+service_name
+transaction_date
+revenue_rank
+volume_rank
+total_revenue
+transaction_volume
+daily_revenue
+daily_transaction_volume
+avg_transaction_amount
+revenue_share
+volume_share
+previous_day_revenue
+revenue_growth
+previous_day_volume
+volume_growth
+```
+
+### Blocked raw fields
+
+Examples include:
+
+```text
+transactionid
+accountidfrom
+accountidto
+originaltrx
+invoiceid
+requestid
+balancebefore
+```
+
+The Privacy Guard:
+
+1. Loads aggregated results
+2. Checks for blocked fields
+3. Keeps only approved analytical fields
+4. Creates a sanitized payload
+5. Verifies that the sanitized payload is not empty
+6. Saves the sanitized data
+
+Output:
+
+```text
+output/sanitized_analysis.json
+```
+
+This creates a clear boundary between:
+
+```text
+Oracle / Raw Data Environment
+            │
+            ▼
+      Aggregated Data
+            │
+            ▼
+       Privacy Guard
+            │
+            ▼
+       Gemini Analyst
+```
+
+---
+
+# 9. AI Business Analyst
+
+After the Privacy Guard completes successfully, Gemini receives the sanitized aggregated analytical data.
+
+The AI Business Analyst generates a structured business report containing:
+
+* Executive Summary
+* Key Insights
+* Service Performance
+* Time Trend Analysis
+* Revenue vs Volume Analysis
+* Recommendations
+* Data Limitations
+
+The analyst is instructed to:
+
+* Use only the supplied aggregated data
+* Avoid inventing business causes
+* Never request or assume raw transaction-level data
+* Treat missing observations as unavailable rather than zero
+* Clearly distinguish observations from hypotheses
+* Validate numerical relationships
+* Respect the Top-N scope
+* Avoid unsupported customer behavior claims
+
+Final report:
+
+```text
+output/ai_business_report.md
+```
+
+---
+
+# 10. Key Analytical Findings
+
+For the analyzed period **July 7–12, 2026**:
+
+### Revenue Concentration
+
+The top two services generated:
+
+* Balance Transfer: **53.04%**
+* Extra Commission: **43.25%**
+
+Combined:
+
+**96.29%**
+
+The complete Top-10 revenue group represents:
+
+**98.53%**
+
+Services outside the Top 10 represent:
+
+**1.47%**
+
+---
+
+### High-Volume Services
+
+Examples include:
+
+| Service                 | Transactions | Revenue Share |
+| ----------------------- | -----------: | ------------: |
+| Balance Transfer        |      209,169 |        53.04% |
+| WE ADSL                 |      103,291 |         0.11% |
+| South Cairo Electricity |       92,618 |         0.06% |
+
+This demonstrates that transaction volume and revenue contribution can differ significantly.
+
+---
+
+### Major Revenue Spikes
+
+Two significant single-day spikes were identified:
+
+**Extra Commission – July 9**
+
+```text
+Daily Revenue: 14.67B
+Transactions: 749
+Observed Daily Average Transaction Value: 19.58M
+```
+
+**Balance Transfer – July 12**
+
+```text
+Daily Revenue: 15.62B
+Transactions: 45,238
+Observed Daily Average Transaction Value: 345,356.71
+```
+
+The aggregated dataset does not provide enough information to determine the operational cause of these spikes.
+
+---
+
+# 11. Project Structure
+
+```text
+AI_For_BI_Data_Analytics/
 │
 ├── output/
-│   └── ai_business_report.md
+│   ├── aggregated_results.json
+│   ├── ai_business_report.md
+│   ├── analysis_plan.json
+│   ├── generated_sql.json
+│   └── sanitized_analysis.json
 │
 ├── prompts/
-│   └── prompts.md
-│
-├── python/
-│   ├── ai_analysis.py
-│   ├── analysis.py
-│   └── data_loader.py
+│   ├── analyst_prompt.md
+│   ├── planner_prompt.md
+│   └── sql_generator_prompt.md
 │
 ├── sql/
-│   ├── ai_generated.sql
-│   └── improved.sql
+│   ├── analysis_queries.sql
+│   ├── improved.sql
+│   └── kpi_queries.sql
 │
 ├── src/
-│   └── config.py
+│   ├── __init__.py
+│   ├── ai_analysis.py
+│   ├── ai_planner.py
+│   ├── ai_sql_generator.py
+│   ├── analysis.py
+│   ├── analysis_executor.py
+│   ├── config.py
+│   ├── data_loader.py
+│   ├── database.py
+│   ├── privacy_guard.py
+│   └── sql_validator.py
+│
+├── tests/
+│   ├── test_analysis.py
+│   ├── test_kpis.py
+│   └── test_privacy.py
 │
 ├── .env
 ├── .gitignore
@@ -129,521 +479,228 @@ Week10_AI_for_BI_Data_Analytics/
 
 ---
 
-# Data Processing
+# 12. Technologies
 
-The project processes transaction data stored in an Oracle database.
+### Programming
 
-The SQL transformation applies several data-quality and business rules before calculating the analytical metrics.
+* Python
+* SQL
 
-## Data Validation Rules
+### Database
 
-The SQL pipeline:
+* Oracle Database
 
-1. Removes records with missing critical values.
-2. Keeps transactions where `TotalAmount > 0`.
-3. Ensures `TransactionType` exists in the `SERVICES` table.
-4. Accepts only valid `IsReversed` values (`0` or `1`).
-5. Excludes future-dated transactions.
-6. Applies the required analysis period.
-7. Removes duplicate `TransactionID` records by keeping the record with the highest `ID`.
-8. Excludes reversed transactions from business revenue and transaction-volume calculations.
+### AI
 
----
+* Google Gemini
 
-# SQL Analysis
+### Python Libraries
 
-The original AI-generated SQL is stored in:
+* `google-genai`
+* `pandas`
+* `SQLAlchemy`
+* `oracledb`
+* `python-dotenv`
+* `pytest`
 
-```text
-sql/ai_generated.sql
-```
+### Data Engineering / BI Concepts
 
-The reviewed and improved version is:
-
-```text
-sql/improved.sql
-```
-
-The SQL follows this general processing flow:
-
-```text
-Raw Transactions
-       ↓
-Valid Transactions
-       ↓
-Deduplicated Transactions
-       ↓
-Valid Service Transactions
-       ↓
-Business Transactions
-       ↓
-Daily Service Metrics
-       ↓
-Service Totals
-       ↓
-Service Ranking
-       ↓
-Daily Trends
-       ↓
-Final BI Dataset
-```
-
-The final SQL calculates:
-
-* Daily transaction volume
-* Daily revenue
-* Average transaction amount
-* Total transaction volume
-* Total revenue
-* Revenue rank
-* Volume rank
-* Previous-day revenue
-* Previous-day transaction volume
-* Revenue growth percentage
-* Volume growth percentage
+* ETL / ELT concepts
+* Data Quality
+* SQL validation
+* Data privacy
+* Data aggregation
+* Window functions
+* CTEs
+* Analytical SQL
+* KPI generation
+* Business intelligence
+* AI-assisted analytics
 
 ---
 
-# Python Data Loading
+# 13. Security & Privacy Design
 
-`python/data_loader.py` is responsible for executing the reviewed SQL query and loading the results into a Pandas DataFrame.
+The project follows a **validate-before-execute** approach.
 
-The module:
+Gemini-generated SQL is treated as untrusted generated code.
 
-1. Reads `sql/improved.sql`.
-2. Creates the Oracle SQLAlchemy connection.
-3. Executes the query.
-4. Loads the result into Pandas.
-5. Returns the DataFrame.
-6. Properly disposes of the database engine.
-
-Example result:
+The execution sequence is:
 
 ```text
-Rows loaded: 2,413
-Columns loaded: 14
+AI Generated SQL
+       ↓
+SQL Validator
+       ↓
+PASS?
+  ├── NO  → Reject
+  │
+  └── YES
+       ↓
+Oracle Execution
 ```
 
----
-
-# Business Analysis
-
-`python/analysis.py` performs the main analytical calculations.
-
-The analysis includes:
-
-### Overall Metrics
-
-* Total revenue
-* Total transaction volume
-* Number of services
-* Number of analysis days
-* Average daily revenue
-* Average daily transaction volume
-
-### Service Performance
-
-* Top revenue services
-* Top volume services
-* Revenue ranking
-* Volume ranking
-* Revenue concentration
-* Volume concentration
-
-### Time Analysis
-
-* Daily revenue
-* Daily transaction volume
-* Day-over-day changes
-* Revenue growth
-* Volume growth
-* Significant increases
-* Significant decreases
-
-### Data Quality
-
-* Unexpected NULL values
-* Expected analytical NULL values
-* Duplicate rows
-* Negative revenue
-* Negative transaction volume
-* Corrupted service names
-
----
-
-# AI Business Analysis
-
-The project uses Google Gemini to transform the calculated analytical results into a professional BI report.
-
-The AI integration is implemented in:
-
-```text
-python/ai_analysis.py
-```
-
-The workflow is:
-
-```text
-analysis.py
-     ↓
-Analysis Results
-     ↓
-JSON Preparation
-     ↓
-Prompt Template
-     ↓
-Gemini
-     ↓
-AI Business Report
-     ↓
-output/ai_business_report.md
-```
-
-The project uses the Gemini Interactions API.
-
-The AI is not responsible for calculating the core business metrics.
+The AI Business Analyst does not receive raw transaction-level identifiers.
 
 Instead:
 
 ```text
-SQL + Python
-     ↓
-Calculate reliable metrics
-     ↓
-Gemini
-     ↓
-Interpret the metrics
+Raw / Transaction Data
+        ↓
+SQL Aggregation
+        ↓
+Aggregated Results
+        ↓
+Privacy Guard
+        ↓
+Sanitized Results
+        ↓
+Gemini Analyst
 ```
 
-This separation helps keep numerical analysis deterministic while using Generative AI primarily for business interpretation and reporting.
+This reduces unnecessary exposure of sensitive transaction-level information.
 
 ---
 
-# Prompt Engineering
+# 14. Configuration
 
-The main AI instructions are stored in:
+Environment variables are stored in `.env`.
 
-```text
-prompts/prompts.md
-```
-
-The prompt was designed to reduce unsupported AI assumptions and hallucinations.
-
-The AI is instructed to:
-
-* Use only supplied data.
-* Avoid inventing business facts.
-* Avoid unsupported causal explanations.
-* Separate facts from interpretations.
-* Treat hypotheses explicitly.
-* Interpret extreme growth percentages using their baselines.
-* Prioritize absolute financial impact.
-* Keep revenue and transaction volume analysis separate.
-* Avoid assuming customer engagement from transaction counts.
-* Avoid unsupported profitability or cost assumptions.
-* Avoid inventing technical root causes.
-* Respect the six-day observation period.
-* Provide evidence-based recommendations.
-
-The preferred analytical pattern is:
+Example configuration:
 
 ```text
-OBSERVATION
-     ↓
-BUSINESS INTERPRETATION
-     ↓
-LIMITATION
+START_DATE=2026-07-07 00:00:00
+END_DATE=2026-07-13 00:00:00
 ```
 
-Recommendations follow:
+The end date is treated as an **exclusive boundary**.
+
+Therefore, the analysis covers:
 
 ```text
-OBSERVED PATTERN
-     ↓
-BUSINESS IMPLICATION
-     ↓
-RECOMMENDED ACTION
+July 7
+July 8
+July 9
+July 10
+July 11
+July 12
 ```
+
+Never commit `.env` or database credentials to GitHub.
 
 ---
 
-# Key Business Findings
+# 15. Installation
 
-The current analysis covers:
-
-```text
-Observation Period:
-2026-07-07 → 2026-07-12
-
-Active Services:
-582
-
-Total Revenue:
-33,912,079,041.22
-
-Total Transactions:
-7,016,458
-```
-
-## Revenue Concentration
-
-The two highest revenue-generating services are:
-
-| Service          |           Revenue |  Share |
-| ---------------- | ----------------: | -----: |
-| Balance Transfer | 17,986,458,044.61 | 53.04% |
-| Extra Commission | 14,666,461,267.75 | 43.25% |
-
-Together:
-
-```text
-Revenue = 32,652,919,312.36
-Share   = 96.29%
-```
-
-The top 10 revenue services account for:
-
-```text
-98.54% of total revenue
-```
-
-This indicates a very high concentration of recorded revenue within a small number of services during the observation period.
-
----
-
-# Transaction Volume Findings
-
-Total transaction volume:
-
-```text
-7,016,458
-```
-
-The top 10 services by transaction volume account for:
-
-```text
-3,754,339 transactions
-53.51% of total volume
-```
-
-Revenue and transaction-volume rankings are substantially different.
-
-For example:
-
-* Service 3773 ranks #1 in transaction volume.
-* Service 395 ranks #1 in revenue.
-* Service 866 ranks #2 in revenue but much lower in transaction volume.
-
-This demonstrates that transaction volume alone is not a direct proxy for revenue generation.
-
----
-
-# Revenue Volatility
-
-Daily revenue varied significantly during the observation period.
-
-Lowest daily revenue:
-
-```text
-2026-07-10
-225,957,474.81
-```
-
-Highest daily revenue:
-
-```text
-2026-07-12
-15,927,591,717.76
-```
-
-Two major service-level spikes contributed substantially to this variation:
-
-```text
-Service 866
-2026-07-09
-14,665,525,894.30 revenue
-
-Service 395
-2026-07-12
-15,623,246,800.87 revenue
-```
-
-The available dataset identifies the observed spikes but does not contain sufficient metadata to establish their underlying causes.
-
----
-
-# Data Quality Findings
-
-The analysis identified:
-
-```text
-Total analytical records:
-2,413
-
-Unexpected NULL values:
-49
-
-Expected growth-related NULL values:
-2,328
-
-Duplicate rows:
-0
-
-Negative revenue rows:
-0
-
-Negative volume rows:
-0
-```
-
-Several service names also contain unreadable character sequences such as:
-
-```text
-¿¿¿
-```
-
-These values reduce reporting clarity and service attribution.
-
-The available dataset does not provide enough technical metadata to establish the root cause of the corrupted text.
-
----
-
-# AI Report Output
-
-The generated AI business report is saved automatically to:
-
-```text
-output/ai_business_report.md
-```
-
-This file contains:
-
-* Executive Summary
-* Key Business Findings
-* Revenue Analysis
-* Transaction Volume Analysis
-* Growth and Decline Analysis
-* Data Quality Observations
-* Business Risks
-* Recommendations
-
----
-
-# Technologies Used
-
-| Technology      | Purpose                                         |
-| --------------- | ----------------------------------------------- |
-| Python          | Main programming language                       |
-| Oracle Database | Source database                                 |
-| SQL             | Data transformation and analytical calculations |
-| Pandas          | Data analysis                                   |
-| SQLAlchemy      | Database connectivity                           |
-| python-oracledb | Oracle database driver                          |
-| Google Gemini   | AI-powered BI interpretation                    |
-| python-dotenv   | Environment configuration                       |
-| Markdown        | AI report format                                |
-
----
-
-# Environment Configuration
-
-Database and API credentials are stored in `.env`.
-
-Example:
-
-```env
-DB_USER=your_username
-DB_PASSWORD=your_password
-DB_HOST=your_host
-DB_PORT=1521
-DB_SERVICE=your_service
-
-GEMINI_API_KEY=your_gemini_api_key
-```
-
-Never commit real credentials to source control.
-
----
-
-# Installation
-
-Create and activate a Python virtual environment if required:
-
-```powershell
-python -m venv .venv
-```
-
-Activate it on Windows:
-
-```powershell
-.venv\Scripts\activate
-```
-
-Install project dependencies:
+Create and activate a Python environment, then install the required dependencies:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
----
-
-# Running the Project
-
-## 1. Test Database Data Loading
-
-Run:
-
-```powershell
-python -m python.data_loader
-```
-
-Expected output includes:
+Configure the required environment variables in:
 
 ```text
-SQL executed successfully.
-Rows loaded: 2,413
-Columns loaded: 14
+.env
 ```
+
+Make sure the Oracle connection and Gemini API configuration are available before running the pipeline.
 
 ---
 
-## 2. Run Business Analysis
+# 16. Running the Pipeline
 
-Run:
-
-```powershell
-python -m python.analysis
-```
-
-This calculates the business metrics and prints the analytical results.
-
----
-
-## 3. Generate the AI Business Report
-
-Run:
+### 1. Generate the analysis plan
 
 ```powershell
-python -m python.ai_analysis
+python -m src.ai_planner
 ```
 
-The complete pipeline will execute:
+Output:
 
 ```text
-Oracle
-  ↓
-SQL
-  ↓
-Pandas
-  ↓
-Business Analysis
-  ↓
-Gemini
-  ↓
-Markdown Report
+output/analysis_plan.json
 ```
 
-The final report will be created at:
+---
+
+### 2. Generate SQL
+
+```powershell
+python -m src.ai_sql_generator
+```
+
+Output:
+
+```text
+output/generated_sql.json
+```
+
+---
+
+### 3. Validate generated SQL
+
+```powershell
+python -m src.sql_validator
+```
+
+Expected result:
+
+```text
+All generated queries passed validation.
+
+SQL VALIDATION PASSED
+```
+
+Output:
+
+```text
+output/validated_sql.json
+```
+
+---
+
+### 4. Execute validated SQL
+
+```powershell
+python -m src.analysis_executor
+```
+
+Output:
+
+```text
+output/aggregated_results.json
+```
+
+---
+
+### 5. Run Privacy Guard
+
+```powershell
+python -m src.privacy_guard
+```
+
+Expected result:
+
+```text
+PRIVACY GUARD COMPLETED SUCCESSFULLY
+```
+
+Output:
+
+```text
+output/sanitized_analysis.json
+```
+
+---
+
+### 6. Generate the AI Business Report
+
+```powershell
+python -m src.ai_analysis
+```
+
+Output:
 
 ```text
 output/ai_business_report.md
@@ -651,94 +708,206 @@ output/ai_business_report.md
 
 ---
 
-# Project Design Principles
+# 17. Testing
 
-This project follows several important analytical principles.
+The project includes automated tests for:
 
-### 1. SQL First, AI Second
+* Analytical logic
+* KPI calculations
+* Privacy controls
 
-The core numerical calculations are performed using SQL and Python before sending the results to Gemini.
+Run:
 
-### 2. Evidence-Based AI
-
-Gemini receives calculated metrics rather than raw uncontrolled assumptions.
-
-### 3. Human Review of AI-Generated SQL
-
-The initial AI-generated SQL is reviewed and improved before becoming the production analytical query.
-
-```text
-AI-generated SQL
-       ↓
-Human Review
-       ↓
-Improved SQL
-       ↓
-Production Analysis
+```powershell
+python -m pytest -v
 ```
 
-### 4. Conservative Business Interpretation
-
-The AI is instructed not to claim causes that cannot be demonstrated from the available data.
-
-### 5. Separation of Revenue and Volume
-
-Revenue and transaction volume are analyzed independently because high processing volume does not necessarily imply high revenue.
-
----
-
-# Limitations
-
-The current analysis has several limitations:
-
-1. The observation window covers only six active transaction days.
-2. The dataset does not contain customer-level information.
-3. Cost, margin, and profitability information is not available.
-4. Operational metadata explaining revenue spikes is not available.
-5. The root cause of corrupted service-name values cannot be established from the dataset alone.
-6. Unexpected NULL values require additional source-level investigation.
-7. Short observation periods should not be used to establish long-term trends without additional historical data.
-
----
-
-# Future Improvements
-
-Potential extensions include:
-
-* Interactive Power BI dashboard
-* Revenue and volume trend visualizations
-* Automated data-quality reports
-* Historical trend analysis
-* Service-level anomaly detection
-* Revenue concentration monitoring
-* Automated BI alerts
-* Additional transaction-level metadata
-* Unit economics analysis using cost and margin data
-* Scheduled AI-generated BI reports
-
----
-
-# Conclusion
-
-This project demonstrates how traditional Business Intelligence techniques can be combined with Generative AI.
-
-The analytical workflow separates responsibilities:
+The current test suite has been successfully executed with:
 
 ```text
-Oracle + SQL
-    ↓
-Data Validation & Transformation
-
-Python + Pandas
-    ↓
-Business Metrics & Analysis
-
-Gemini AI
-    ↓
-Business Interpretation & Reporting
+16 passed
 ```
 
-The result is an end-to-end AI-assisted BI pipeline capable of transforming transactional data into a structured, evidence-based business intelligence report.
+The Google Gemini dependency may display an AFC-related warning during execution. This warning comes from the external `google-genai` library and does not indicate a project execution failure.
 
-The project demonstrates that Generative AI can enhance BI analysis while keeping the underlying numerical calculations and data transformations deterministic and auditable.
+---
 
+# 18. Data Quality Considerations
+
+The analytical workflow preserves several data-quality principles:
+
+### Missing Data
+
+Missing observations are treated as unavailable data rather than zero activity.
+
+### Duplicate Transactions
+
+The SQL generation logic uses deterministic deduplication with:
+
+```sql
+ROW_NUMBER() OVER (
+    PARTITION BY TransactionID
+    ORDER BY ID DESC
+)
+```
+
+### Reversed Transactions
+
+The analytical query applies the project-defined transaction validity rule:
+
+```text
+IsReversed = 0
+```
+
+### Service Relationship
+
+The confirmed relationship used by the analytical SQL is:
+
+```text
+TRANSACTIONS.TransactionType = SERVICES.ID
+```
+
+### Encoding Issue
+
+One service name contains corrupted characters:
+
+```text
+Service ID 1527
+```
+
+The AI report does not attempt to reconstruct the corrupted service name without reliable source information.
+
+---
+
+# 19. Important Limitations
+
+### Aggregated Data Only
+
+The AI Business Analyst receives aggregated analytical results rather than transaction-level records.
+
+Therefore, it cannot reliably determine:
+
+* Individual transaction causes
+* Customer-level behavior
+* Exact operational root causes
+* User-level patterns
+
+### Short Time Window
+
+The analysis covers only six days:
+
+```text
+July 7–12, 2026
+```
+
+Therefore, the findings should not be interpreted as long-term seasonal trends.
+
+### Top-10 Scope
+
+The analytical output focuses on the Top 10 services by overall revenue.
+
+Services outside the Top 10 are not represented individually in the analytical output.
+
+### Service Metadata
+
+Service ID 1527 contains corrupted service-name text.
+
+---
+
+# 20. Design Principles
+
+This project follows several important engineering principles:
+
+### 1. AI does not directly control the database
+
+Generated SQL must pass Python validation before execution.
+
+### 2. Validate before execution
+
+AI-generated code is treated as untrusted input.
+
+### 3. Minimize data exposure
+
+Only aggregated analytical results are provided to the AI Business Analyst.
+
+### 4. Separate computation from interpretation
+
+Python and Oracle perform the analytical computation.
+
+Gemini interprets the resulting analytical metrics and generates the business report.
+
+### 5. Evidence-based AI
+
+The analyst is instructed not to invent causes, business events, or unsupported customer behavior.
+
+### 6. Reproducible workflow
+
+The major intermediate artifacts are saved as JSON/Markdown files, allowing each stage of the workflow to be inspected independently.
+
+---
+
+# 21. Future Improvements
+
+Potential future enhancements include:
+
+* Stronger SQL column-level validation
+* Additional KPI validation
+* Automated numerical reconciliation of AI-generated reports
+* More comprehensive data-quality checks
+* Local AI model evaluation
+* Automated report generation
+* Dashboard integration
+* CI/CD pipeline
+* Query performance monitoring
+* Additional business questions and analysis types
+* Automated anomaly detection
+* Metadata and data lineage integration
+
+---
+
+# 22. Final Workflow Summary
+
+```text
+Business Question
+        ↓
+Gemini Planner
+        ↓
+Analysis Plan
+        ↓
+Gemini SQL Generator
+        ↓
+Generated SQL
+        ↓
+Python SQL Validator
+        ↓
+Validated SQL
+        ↓
+Oracle
+        ↓
+Aggregated Analytical Results
+        ↓
+Privacy Guard
+        ↓
+Sanitized Analytical Data
+        ↓
+Gemini Business Analyst
+        ↓
+AI Business Report
+```
+
+---
+
+## Project Outcome
+
+This project demonstrates a practical approach to integrating Generative AI into a BI/Data Engineering workflow while maintaining important controls around:
+
+* SQL safety
+* Data privacy
+* Analytical correctness
+* Data quality
+* Reproducibility
+* Evidence-based business interpretation
+
+The main principle is:
+
+> **AI assists the analytical workflow, but Python validation, database controls, and privacy boundaries remain responsible for execution and data protection.**

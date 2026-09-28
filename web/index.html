@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI BI Analyst | Al Ahly Momkn</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="/static/style.css?v=7">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+
+    <aside class="sidebar">
+
+        <div class="sidebar-header">
+
+            <!-- Brand -->
+            <div class="brand">
+
+                <div class="brand-logo">
+                    <img
+                        src="https://alahlymomkn.com/media/425/01JWWZET1Y8QWJ44MXQNM78HCR.png"
+                        alt="Al Ahly Momkn"
+                    >
+                </div>
+
+                <div class="brand-info">
+                    <h1>AI BI Analyst</h1>
+                    <span>Business Intelligence</span>
+                </div>
+
+            </div>
+
+
+            <!-- New Chat -->
+
+            <button
+                id="newChatButton"
+                class="new-chat-button"
+                type="button"
+            >
+                <span class="plus-icon">+</span>
+                <span>New Chat</span>
+            </button>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- CONVERSATIONS -->
+        <!-- ================================================= -->
+
+        <div class="conversation-section">
+
+            <div class="section-title">
+                Conversations
+            </div>
+
+            <div
+                id="conversationList"
+                class="conversation-list"
+            >
+
+                <div class="empty-conversations">
+                    No conversations yet
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- SIDEBAR FOOTER -->
+        <!-- ================================================= -->
+
+        <div class="sidebar-footer">
+
+            <div class="system-status">
+
+                <span class="status-dot"></span>
+
+                <div>
+                    <strong>Backend Connected</strong>
+                    <span>AI BI System Online</span>
+                </div>
+
+            </div>
+
+            <div class="sidebar-footer-line"></div>
+
+            <div class="powered-by">
+                AI Business Intelligence
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ================================================= -->
+    <!-- MAIN -->
+    <!-- ================================================= -->
+
+    <main class="main">
+
+
+        <!-- ================================================= -->
+        <!-- HEADER -->
+        <!-- ================================================= -->
+
+        <header class="chat-header">
+
+            <div class="header-left">
+
+                <div class="header-icon">
+                    <span>BI</span>
+                </div>
+
+                <div>
+
+                    <h2>AI Business Analyst</h2>
+
+                    <p>
+                        AI-powered business intelligence & analytics
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="connectionStatus"
+                class="connection-status"
+            >
+
+                <span class="connection-dot"></span>
+
+                <span>Connected</span>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================================================= -->
+        <!-- CHAT AREA -->
+        <!-- ================================================= -->
+
+        <section
+            id="chatMessages"
+            class="chat-messages"
+        >
+
+            <!-- ================================================= -->
+            <!-- WELCOME -->
+            <!-- ================================================= -->
+
+            <div class="welcome">
+
+                <div class="welcome-brand">
+
+                    <div class="welcome-logo">
+                        <span>AI</span>
+                    </div>
+
+                </div>
+
+
+                <div class="welcome-badge">
+                    <span class="badge-dot"></span>
+                    AI-Powered Analytics
+                </div>
+
+
+                <h2>
+                    Welcome to AI BI Analyst
+                </h2>
+
+                <p>
+                    Ask business questions in natural language
+                    and get data-driven insights from your BI data.
+                </p>
+
+
+                <!-- ================================================= -->
+                <!-- EXAMPLE QUESTIONS -->
+                <!-- ================================================= -->
+
+                <div class="example-questions">
+
+                    <button
+                        class="example-question"
+                        data-question="What was the biggest revenue spike?"
+                        type="button"
+                    >
+
+                        <span class="example-icon revenue-icon">
+                            ↗
+                        </span>
+
+                        <span class="example-content">
+                            <strong>Revenue Spike</strong>
+                            <small>
+                                What was the biggest revenue spike?
+                            </small>
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="example-question"
+                        data-question="What were the top 10 services by revenue?"
+                        type="button"
+                    >
+
+                        <span class="example-icon ranking-icon">
+                            ≡
+                        </span>
+
+                        <span class="example-content">
+                            <strong>Top Services</strong>
+                            <small>
+                                What were the top 10 services by revenue?
+                            </small>
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="example-question"
+                        data-question="Show me the main revenue trends."
+                        type="button"
+                    >
+
+                        <span class="example-icon trend-icon">
+                            ◌
+                        </span>
+
+                        <span class="example-content">
+                            <strong>Revenue Trends</strong>
+                            <small>
+                                Show me the main revenue trends.
+                            </small>
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- INPUT -->
+        <!-- ================================================= -->
+
+        <div class="input-container">
+
+            <form
+                id="chatForm"
+                class="chat-form"
+            >
+
+                <div class="input-wrapper">
+
+                    <textarea
+                        id="questionInput"
+                        placeholder="Ask a business question..."
+                        rows="1"
+                        autocomplete="off"
+                    ></textarea>
+
+                    <div class="input-decoration">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="sendButton"
+                    type="submit"
+                >
+
+                    <span id="sendText">
+                        Analyze
+                    </span>
+
+                    <span
+                        id="loadingText"
+                        class="hidden"
+                    >
+                        Analyzing...
+                    </span>
+
+                    <span class="send-arrow">
+                        →
+                    </span>
+
+                </button>
+
+            </form>
+
+
+            <div class="input-hint">
+
+                <span class="hint-icon">✦</span>
+
+                AI-generated analysis may require several seconds.
+
+                <span class="hint-separator">•</span>
+
+                Powered by your BI data
+
+            </div>
+            
+            <button
+                type="button"
+                class="dashboard-button"
+                onclick="openConversationDashboard()"
+            >
+                📊 Open Dashboard
+            </button>
+            
+        </div>
+
+    </main>
+
+</div>
+
+
+<script src="/static/app.js?v=10"></script>
+
+</body>
+
+</html>

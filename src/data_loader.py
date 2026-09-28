@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 from sqlalchemy import text
 
-from config.database import get_engine
+from src.database import get_engine
 from src.config import START_DATE, END_DATE
 
 
